@@ -1,113 +1,136 @@
 
--- DF Hub - Redz Style UI
--- Desenvolvido por David e Francisco
+--[[
+    D_F BY DAVID E FRANCISCO - MENU COMPLETO ESTILO REDZ (SUPORTE MOBILE)
+]]--
 
+-- Serviços
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
+local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
 
--- Tela principal
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DF_Hub"
+-- GUI Principal
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "D_F_Hub"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = CoreGui
 
--- Container Principal
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 500, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
+-- Frame Principal
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 600, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
+MainFrame.Visible = true
 
--- UICorner para bordas arredondadas
-local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 10)
+-- UI Corner
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 10)
 
--- Título
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Text = "D_F Hub - Redz Style"
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 20
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundTransparency = 1
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Parent = MainFrame
+-- Botão Mostrar/Ocultar
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 120, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0.5, -20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ToggleButton.Text = "Mostrar/Ocultar Menu"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextScaled = true
+ToggleButton.ZIndex = 999
 
--- Aba de botões
-local TabButtons = Instance.new("Frame")
-TabButtons.Name = "TabButtons"
-TabButtons.Size = UDim2.new(0, 130, 1, -30)
-TabButtons.Position = UDim2.new(0, 0, 0, 30)
-TabButtons.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-TabButtons.BorderSizePixel = 0
-TabButtons.Parent = MainFrame
+ToggleButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
 
-local TabCorner = Instance.new("UICorner", TabButtons)
-TabCorner.CornerRadius = UDim.new(0, 8)
+-- Containers
+local TabsContainer = Instance.new("Frame", MainFrame)
+TabsContainer.Size = UDim2.new(0, 150, 1, 0)
+TabsContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+TabsContainer.BorderSizePixel = 0
 
--- Área de conteúdo
-local TabContent = Instance.new("Frame")
-TabContent.Name = "TabContent"
-TabContent.Size = UDim2.new(1, -140, 1, -40)
-TabContent.Position = UDim2.new(0, 140, 0, 35)
-TabContent.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-TabContent.BorderSizePixel = 0
-TabContent.Parent = MainFrame
+local PagesContainer = Instance.new("Frame", MainFrame)
+PagesContainer.Position = UDim2.new(0, 150, 0, 0)
+PagesContainer.Size = UDim2.new(1, -150, 1, 0)
+PagesContainer.BackgroundTransparency = 1
 
-local TabContentCorner = Instance.new("UICorner", TabContent)
-TabContentCorner.CornerRadius = UDim.new(0, 8)
+-- Layouts
+local TabsLayout = Instance.new("UIListLayout", TabsContainer)
+TabsLayout.FillDirection = Enum.FillDirection.Vertical
+TabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabsLayout.Padding = UDim.new(0, 5)
 
--- Lista de abas
+-- Exemplo de Abas e Funções
 local Tabs = {
-    "Auto Farm", "Raids / Dungeons", "Combate", "Movimento", "Visão", "Utilidades", "Economia", "Estética"
+    {
+        Name = "Auto Farm",
+        Functions = {
+            {Name = "Auto Farm Level", Callback = function() print("Auto Farm Level") end},
+            {Name = "Auto Farm Bosses", Callback = function() print("Auto Farm Bosses") end},
+        }
+    },
+    {
+        Name = "Combate",
+        Functions = {
+            {Name = "Aimbot", Callback = function() print("Aimbot") end},
+            {Name = "Kill Aura", Callback = function() print("Kill Aura") end},
+        }
+    }
 }
 
--- Função para criar botão de aba
-local function createTabButton(name)
-    local Button = Instance.new("TextButton")
-    Button.Name = name
-    Button.Size = UDim2.new(1, -10, 0, 30)
-    Button.Position = UDim2.new(0, 5, 0, #TabButtons:GetChildren() * 35)
-    Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    Button.Text = name
-    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Button.Font = Enum.Font.Gotham
-    Button.TextSize = 14
-    Button.Parent = TabButtons
+-- Sistema de Abas
+local selectedTab = nil
 
-    local Corner = Instance.new("UICorner", Button)
-    Corner.CornerRadius = UDim.new(0, 6)
+for _, tab in ipairs(Tabs) do
+    local TabButton = Instance.new("TextButton")
+    TabButton.Parent = TabsContainer
+    TabButton.Size = UDim2.new(1, 0, 0, 40)
+    TabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.Text = tab.Name
+    TabButton.Font = Enum.Font.SourceSansBold
+    TabButton.TextScaled = true
+    TabButton.BorderSizePixel = 0
 
-    Button.MouseButton1Click:Connect(function()
-        for _, v in pairs(TabContent:GetChildren()) do
-            if v:IsA("Frame") then
-                v.Visible = false
-            end
+    local TabPage = Instance.new("ScrollingFrame")
+    TabPage.Name = tab.Name
+    TabPage.Parent = PagesContainer
+    TabPage.Size = UDim2.new(1, 0, 1, 0)
+    TabPage.BackgroundTransparency = 1
+    TabPage.Visible = false
+    TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
+    TabPage.ScrollBarThickness = 4
+
+    local FunctionList = Instance.new("UIListLayout", TabPage)
+    FunctionList.FillDirection = Enum.FillDirection.Vertical
+    FunctionList.SortOrder = Enum.SortOrder.LayoutOrder
+    FunctionList.Padding = UDim.new(0, 5)
+
+    for _, func in ipairs(tab.Functions) do
+        local FuncButton = Instance.new("TextButton")
+        FuncButton.Parent = TabPage
+        FuncButton.Size = UDim2.new(1, -10, 0, 30)
+        FuncButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        FuncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        FuncButton.Text = func.Name
+        FuncButton.Font = Enum.Font.SourceSans
+        FuncButton.TextScaled = true
+        FuncButton.BorderSizePixel = 0
+        FuncButton.Position = UDim2.new(0, 5, 0, 0)
+
+        FuncButton.MouseButton1Click:Connect(func.Callback)
+    end
+
+    TabButton.MouseButton1Click:Connect(function()
+        if selectedTab then
+            selectedTab.Visible = false
         end
-        if TabContent:FindFirstChild(name) then
-            TabContent[name].Visible = true
-        end
+        TabPage.Visible = true
+        selectedTab = TabPage
     end)
+
+    if not selectedTab then
+        TabPage.Visible = true
+        selectedTab = TabPage
+    end
 end
-
--- Criar conteúdo para cada aba
-for _, tabName in ipairs(Tabs) do
-    createTabButton(tabName)
-    local TabFrame = Instance.new("Frame")
-    TabFrame.Name = tabName
-    TabFrame.Size = UDim2.new(1, 0, 1, 0)
-    TabFrame.BackgroundTransparency = 1
-    TabFrame.Visible = false
-    TabFrame.Parent = TabContent
-end
-
--- Ativar primeiro tab por padrão
-TabContent["Auto Farm"].Visible = true
-
-print("Interface do DF Hub (Redz Style) carregada com abas.")
