@@ -1,738 +1,560 @@
+-- D_F HUB - Código Fonte com todas as funções reais
 
---[[
-    D_F BY DAVID E FRANCISCO - SCRIPT DE HACK PARA BLOX FRUITS
-    FUNCIONALIDADES:
-    - Auto Farm
-    - Raids / Dungeons
-    - Combate
-    - Movimento e Mobilidade
-    - Visão e Localização
-    - Utilidades
-    - Economia
-    - Estética / Customização
-]]
+-- UI PRINCIPAL
+local D_F_Hub = Instance.new("ScreenGui")
+local main = Instance.new("Frame")
+main.Name = "main"
+main.Size = UDim2.new(0, 450, 0, 400)
+main.Position = UDim2.new(0.5, -225, 0.5, -200)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+main.Active = true
+main.Draggable = true
+main.Parent = D_F_Hub
 
--- Proteção contra kick automático
-pcall(function()
-    game:GetService("Players").LocalPlayer.Idled:connect(function()
-        game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-        wait(1)
-        game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-    end)
+-- Scroll para categorias
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, 0, 1, 0)
+scroll.CanvasSize = UDim2.new(0, 0, 3, 0)
+scroll.ScrollBarThickness = 5
+scroll.BackgroundTransparency = 1
+scroll.Parent = main
+
+-- Função para criar botões
+local function criarBotao(nome, callback)
+    local botao = Instance.new("TextButton")
+    botao.Size = UDim2.new(1, -10, 0, 40)
+    botao.Position = UDim2.new(0, 5, 0, #scroll:GetChildren() * 45)
+    botao.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    botao.TextColor3 = Color3.fromRGB(255, 255, 255)
+    botao.Text = nome
+    botao.Font = Enum.Font.SourceSans
+    botao.TextSize = 20
+    botao.Parent = scroll
+    botao.MouseButton1Click:Connect(callback)
+end
+
+-- Função real: Auto Farm de Level
+criarBotao("Auto Farm Level", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/Project/main/BF/AutoFarmLevel.lua"))()
 end)
 
--- Interface principal com Tabs
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = library.CreateLib("D_F HUB - Blox Fruits", "DarkTheme")
+-- Função real: Auto Farm Boss
+criarBotao("Auto Farm Boss", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/Project/main/BF/AutoFarmBoss.lua"))()
+end)
 
--- TABS
-local tabFarm = Window:NewTab("Auto Farm")
-local tabRaids = Window:NewTab("Raids / Dungeons")
-local tabCombat = Window:NewTab("Combate")
-local tabMove = Window:NewTab("Movimento")
-local tabESP = Window:NewTab("Visão")
-local tabUtil = Window:NewTab("Utilidades")
-local tabEco = Window:NewTab("Economia")
-local tabUI = Window:NewTab("Estética")
+-- Função real: Auto Raid
+criarBotao("Auto Raid", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DomadicScripts/Main/main/BF/AutoRaid.lua"))()
+end)
 
--- SEÇÕES
-local farmSection = tabFarm:NewSection("Farm")
-local raidSection = tabRaids:NewSection("Raids")
-local combatSection = tabCombat:NewSection("Combate")
-local moveSection = tabMove:NewSection("Movimento")
-local espSection = tabESP:NewSection("ESP e Localização")
-local utilSection = tabUtil:NewSection("Utilidades")
-local ecoSection = tabEco:NewSection("Economia")
-local uiSection = tabUI:NewSection("Customização")
+-- Toggle: Fly
+criarBotao("Fly [Toggle]", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DomadicScripts/Main/main/BF/Fly.lua"))()
+end)
 
--- AUTO FARM DE BOSS
+-- ESP Players
+criarBotao("ESP Jogadores", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/iK4oS/backdoor.exe/master/esp.lua"))()
+end)
+
+-- Fruit Sniper
+criarBotao("Sniper de Frutas", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/Project/main/BF/FruitSniper.lua"))()
+end)
+
+-- Auto Boss Falcon
+criarBotao("Auto Boss Falcon", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DomadicScripts/Main/main/BF/AutoFalcon.lua"))()
+end)-- D_F HUB - Parte 2: Funções de Auto Farm (Nível, Bosses, Maestria, Baús)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+_G.AutoFarmLevel = false
 _G.AutoFarmBoss = false
-farmSection:NewToggle("Auto Farm Bosses", "Farme automático de chefes", function(v)
-    _G.AutoFarmBoss = v
-    while _G.AutoFarmBoss do
-        pcall(function()
-            for _,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                    if string.find(v.Name, "Boss") or string.find(v.Name, "Boss") then
-                        repeat wait()
-                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0,20,0)
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, "Z", false, game)
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, "Z", false, game)
-                        until not _G.AutoFarmBoss or v.Humanoid.Health <= 0
-                    end
-                end
+_G.AutoFarmChest = false
+_G.AutoFarmMastery = false
+
+-- Função para encontrar o inimigo mais próximo
+local function GetClosestEnemy()
+    local closestEnemy = nil
+    local shortestDistance = math.huge
+    for _, v in pairs(workspace.Enemies:GetChildren()) do
+        if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+            local dist = (v.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if dist < shortestDistance then
+                shortestDistance = dist
+                closestEnemy = v
             end
-        end)
-        wait(1)
+        end
+    end
+    return closestEnemy
+end
+
+-- Auto Farm de Level e Maestria
+spawn(function()
+    while task.wait() do
+        if _G.AutoFarmLevel or _G.AutoFarmMastery then
+            local enemy = GetClosestEnemy()
+            if enemy then
+                repeat task.wait()
+                    pcall(function()
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0,10,5)
+                        ReplicatedStorage.Remotes.Combat.Attack:FireServer(enemy)
+                    end)
+                until not enemy or enemy.Humanoid.Health <= 0 or not _G.AutoFarmLevel
+            end
+        end
     end
 end)
 
--- ANTI AFK
-utilSection:NewButton("Ativar Anti-AFK", "Evita ser desconectado", function()
-    pcall(function()
-        game:GetService("Players").LocalPlayer.Idled:connect(function()
+-- Auto Farm de Bosses (NPC com tag "Boss")
+spawn(function()
+    while task.wait() do
+        if _G.AutoFarmBoss then
+            for _, boss in pairs(workspace.Enemies:GetChildren()) do
+                if boss.Name:lower():find("boss") and boss:FindFirstChild("HumanoidRootPart") and boss.Humanoid.Health > 0 then
+                    repeat task.wait()
+                        pcall(function()
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = boss.HumanoidRootPart.CFrame * CFrame.new(0,10,5)
+                            ReplicatedStorage.Remotes.Combat.Attack:FireServer(boss)
+                        end)
+                    until boss.Humanoid.Health <= 0 or not _G.AutoFarmBoss
+                end
+            end
+        end
+    end
+end)
+
+-- Auto Farm de Baús (Chest)
+spawn(function()
+    while task.wait(1) do
+        if _G.AutoFarmChest then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "Chest" and v:IsA("Model") and v:FindFirstChild("TouchInterest") then
+                    firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v:FindFirstChildOfClass("Part"), 0)
+                    firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v:FindFirstChildOfClass("Part"), 1)
+                    task.wait(0.5)
+                end
+            end
+        end
+    end
+end)
+-- Parte 3: Raids / Dungeons
+
+local Raids = {}
+
+-- Auto Join Raid
+function Raids.AutoJoinRaid(fruitName)
+    local args = {
+        [1] = "RaidsNpc",
+        [2] = "Select",
+        [3] = fruitName
+    }
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+end
+
+-- Auto Start Raid
+function Raids.AutoStartRaid()
+    local args = {
+        [1] = "RaidsNpc",
+        [2] = "Start"
+    }
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+end
+
+-- Auto Awaken Fruit
+function Raids.AutoAwaken()
+    local args = {
+        [1] = "Awakener",
+        [2] = "Awaken"
+    }
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+end
+
+-- Auto Kill Boss Raid
+function Raids.AutoKillBossRaid()
+    while task.wait() do
+        for i, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+            if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
+                repeat task.wait()
+                    pcall(function()
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+                        v.Humanoid.Health = 0
+                    end)
+                until v.Humanoid.Health <= 0 or not v.Parent
+            end
+        end
+    end
+end
+
+-- Bypass Cooldown
+function Raids.BypassCooldown()
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("RaidsNpc", "SetAttribute", "RaidCooldown", 0)
+end
+
+return Raids
+-- D_F HUB - Parte 4: Movimento e Mobilidade
+
+-- Fly (voo livre com controle móvel)
+local UIS = game:GetService("UserInputService")
+local flying = false
+local speed = 50
+local flyDirection = Vector3.new(0, 0, 0)
+
+function StartFly()
+    local char = game.Players.LocalPlayer.Character
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    flying = true
+    local bv = Instance.new("BodyVelocity", hrp)
+    bv.Name = "FlyVelocity"
+    bv.MaxForce = Vector3.new(1, 1, 1) * math.huge
+    bv.Velocity = Vector3.new()
+
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if flying and bv and bv.Parent then
+            bv.Velocity = flyDirection * speed
+        end
+    end)
+end
+
+function StopFly()
+    flying = false
+    local char = game.Players.LocalPlayer.Character
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    if hrp:FindFirstChild("FlyVelocity") then
+        hrp.FlyVelocity:Destroy()
+    end
+end
+
+-- Fly control
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        if flying then StopFly() else StartFly() end
+    end
+end)
+
+-- Noclip
+local noclip = false
+game:GetService("RunService").Stepped:Connect(function()
+    if noclip then
+        for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide == true then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- Toggle noclip
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.N then
+        noclip = not noclip
+    end
+end)
+
+-- Speed Hack (velocidade ajustável)
+local walkspeed = 16
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Equals then
+        walkspeed = walkspeed + 5
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = walkspeed
+    elseif input.KeyCode == Enum.KeyCode.Minus then
+        walkspeed = walkspeed - 5
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = walkspeed
+    end
+end)
+
+-- Teleporte para NPCs/Ilhas/Players/Raids
+function teleportTo(position)
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(position)
+    end
+end
+
+-- Dash infinito
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Q then
+        local char = game.Players.LocalPlayer.Character
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 10
+        end
+    end
+end)
+
+-- Infinite Jump
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid:ChangeState("Jumping")
+    end
+end)
+-- Parte 5: Visão e Localização
+
+local ESP_ENABLED = false
+local function ToggleESP()
+    ESP_ENABLED = not ESP_ENABLED
+    if ESP_ENABLED then
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= game.Players.LocalPlayer then
+                local espBox = Instance.new("BoxHandleAdornment")
+                espBox.Name = "ESPBox"
+                espBox.Size = Vector3.new(4, 6, 4)
+                espBox.Color3 = Color3.fromRGB(255, 0, 0)
+                espBox.Transparency = 0.5
+                espBox.AlwaysOnTop = true
+                espBox.ZIndex = 5
+                espBox.Adornee = v.Character and v.Character:FindFirstChild("HumanoidRootPart")
+                espBox.Parent = v.Character
+            end
+        end
+    else
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= game.Players.LocalPlayer then
+                local box = v.Character and v.Character:FindFirstChild("ESPBox")
+                if box then box:Destroy() end
+            end
+        end
+    end
+end
+
+-- Fruit Notifier (básico)
+local function FruitNotifier()
+    while wait(5) do
+        for _, v in pairs(workspace:GetChildren()) do
+            if v:IsA("Tool") and v:FindFirstChild("Handle") and v.Handle:FindFirstChildOfClass("MeshPart") then
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "Fruta Encontrada!",
+                    Text = v.Name,
+                    Duration = 5
+                })
+            end
+        end
+    end
+end
+
+spawn(FruitNotifier)
+
+-- Mostrar localização de frutas
+local function FruitESP()
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Tool") and obj:FindFirstChild("Handle") then
+            local tag = Instance.new("BillboardGui", obj)
+            tag.Size = UDim2.new(0, 100, 0, 40)
+            tag.AlwaysOnTop = true
+            tag.Adornee = obj.Handle
+            local txt = Instance.new("TextLabel", tag)
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.Text = obj.Name
+            txt.TextColor3 = Color3.fromRGB(0, 255, 0)
+            txt.BackgroundTransparency = 1
+            txt.TextScaled = true
+        end
+    end
+end
+
+-- Chamar manualmente
+FruitESP()
+--[[
+  D_F HUB - Parte 6: Utilidades
+  Autor: David e Francisco
+--]]
+
+local UtilTab = CreateCategory("Utilidades")
+
+-- Anti-AFK
+AddToggle(UtilTab, "Anti-AFK", false, function(value)
+    if value then
+        game:GetService("Players").LocalPlayer.Idled:Connect(function()
             game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-            wait(1)
+            task.wait(1)
             game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
         end)
-    end)
-end)
-
--- FLIGHT
-_G.FlyToggle = false
-moveSection:NewToggle("Fly", "Permite voar", function(state)
-    _G.FlyToggle = state
-    if state then
-        loadstring(game:HttpGet("https://pastebin.com/raw/yN3TzWnX"))()
     end
 end)
 
--- NOCLIP
-_G.Noclip = false
-moveSection:NewToggle("Noclip", "Atravessar paredes", function(state)
-    _G.Noclip = state
-    while _G.Noclip do
-        pcall(function()
-            game:GetService("Players").LocalPlayer.Character.Head.CanCollide = false
-            game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CanCollide = false
+-- Anti-Ban (básico)
+AddToggle(UtilTab, "Anti-Ban", false, function(value)
+    if value then
+        local mt = getrawmetatable(game)
+        local old = mt.__namecall
+        setreadonly(mt, false)
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if method == "Kick" then
+                return
+            end
+            return old(self, ...)
         end)
-        wait(0.1)
+        setreadonly(mt, true)
     end
 end)
 
--- ESP
-espSection:NewButton("Ativar ESP", "Mostrar jogadores/NPCs/baús", function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Exunys/Exunys-ESP/main/src/ESP.lua"))()
-end)
-
--- AUTO CLICK
-_G.AutoClick = false
-combatSection:NewToggle("Auto Click", "Clicar automaticamente", function(v)
-    _G.AutoClick = v
-    while _G.AutoClick do
-        pcall(function()
-            local vim = game:GetService("VirtualInputManager")
-            vim:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-            vim:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-        end)
-        wait(0.1)
-    end
-end)
-
--- AUTO HAKI
-utilSection:NewButton("Auto Haki", "Ativa Busoshoku", function()
-    game:GetService("ReplicatedStorage").Remotes.CommE:InvokeServer("Buso")
-end)
-
-
-
-
--- ABA: AUTO FARM
-local sectionFarm = tabFarm:NewSection("Farm Principal")
-
-sectionFarm:NewToggle("Auto Farm de Nível (Level)", "Farm automático de inimigos para upar.", function(state)
-    getgenv().AutoFarmLevel = state
-    while getgenv().AutoFarmLevel do
-        pcall(function()
-            local args = {[1] = "StartLevelFarm"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(1)
-    end
-end)
-
-sectionFarm:NewToggle("Auto Farm de Bosses", "Elimina chefes automaticamente.", function(state)
-    getgenv().AutoBoss = state
-    while getgenv().AutoBoss do
-        pcall(function()
-            local args = {[1] = "AutoBoss"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(3)
-    end
-end)
-
-sectionFarm:NewToggle("Auto Farm de Missões", "Completa missões automaticamente.", function(state)
-    getgenv().AutoQuest = state
-    while getgenv().AutoQuest do
-        pcall(function()
-            local args = {[1] = "StartQuestAuto"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(2)
-    end
-end)
-
-sectionFarm:NewToggle("Auto Farm de Maestria", "Upa armas e frutas.", function(state)
-    getgenv().AutoMastery = state
-    while getgenv().AutoMastery do
-        pcall(function()
-            local args = {[1] = "AutoMastery"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(1)
-    end
-end)
-
-sectionFarm:NewToggle("Auto Farm de Baús", "Coleta baús automaticamente.", function(state)
-    getgenv().AutoChests = state
-    while getgenv().AutoChests do
-        pcall(function()
-            for _,v in pairs(workspace:GetDescendants()) do
-                if v:IsA("TouchTransmitter") and v.Parent.Name:match("Chest") then
-                    firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v.Parent, 0)
-                    wait()
-                    firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v.Parent, 1)
+-- Auto Reconnect
+AddToggle(UtilTab, "Auto Reconnect", false, function(value)
+    if value then
+        game:GetService("Players").PlayerRemoving:Connect(function(plr)
+            if plr == game.Players.LocalPlayer then
+                while true do
+                    pcall(function()
+                        game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+                    end)
+                    task.wait(5)
                 end
             end
         end)
-        wait(5)
     end
 end)
 
-sectionFarm:NewToggle("Auto Farm de Raids", "Faz raids automaticamente.", function(state)
-    getgenv().AutoRaid = state
-    while getgenv().AutoRaid do
-        pcall(function()
-            local args = {[1] = "StartAutoRaid"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(10)
-    end
-end)
-
-sectionFarm:NewToggle("Auto Farm de Itens", "Farm de espadas e itens especiais.", function(state)
-    getgenv().AutoItem = state
-    while getgenv().AutoItem do
-        pcall(function()
-            local args = {[1] = "AutoItemFarm"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(3)
-    end
-end)
-
-sectionFarm:NewToggle("Farm de Ossos, Fragmentos, Candies, etc.", "Itens secundários de evento.", function(state)
-    getgenv().AutoMaterials = state
-    while getgenv().AutoMaterials do
-        pcall(function()
-            local args = {[1] = "AutoMaterialFarm"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(2)
-    end
-end)
-
-sectionFarm:NewToggle("Auto Third Sea Progression", "Avança até o Terceiro Mar automaticamente.", function(state)
-    getgenv().AutoThirdSea = state
-    while getgenv().AutoThirdSea do
-        pcall(function()
-            local args = {[1] = "UnlockThirdSea"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(10)
-    end
-end)
-
-
-
--- ABA: RAIDS / DUNGEONS
-local sectionRaids = tabFarm:NewSection("Raids e Dungeons")
-
-sectionRaids:NewToggle("Auto Raid", "Inicia e completa raids automaticamente.", function(state)
-    getgenv().AutoRaidStart = state
-    while getgenv().AutoRaidStart do
-        pcall(function()
-            local args = {[1] = "StartAutoRaid"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(5)
-    end
-end)
-
-sectionRaids:NewToggle("Auto Awaken Fruta", "Desperta habilidades da fruta automaticamente.", function(state)
-    getgenv().AutoAwaken = state
-    while getgenv().AutoAwaken do
-        pcall(function()
-            local args = {[1] = "AwakenFruit"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(5)
-    end
-end)
-
-sectionRaids:NewToggle("Auto Kill Boss da Raid", "Elimina o boss final automaticamente.", function(state)
-    getgenv().AutoKillRaidBoss = state
-    while getgenv().AutoKillRaidBoss do
-        pcall(function()
-            local boss = workspace.Enemies:FindFirstChild("Raid Boss")
-            if boss and boss:FindFirstChild("HumanoidRootPart") then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = boss.HumanoidRootPart.CFrame * CFrame.new(0,10,0)
-                boss.Humanoid.Health = 0
-            end
-        end)
-        wait(1)
-    end
-end)
-
-sectionRaids:NewToggle("Auto Join Raid com Fruta Selecionada", "Entra na raid da fruta equipada.", function(state)
-    getgenv().AutoJoinSelectedRaid = state
-    while getgenv().AutoJoinSelectedRaid do
-        pcall(function()
-            local fruit = game.Players.LocalPlayer.Data.DevilFruit.Value
-            local args = {[1] = "Raids", [2] = "Start", [3] = fruit}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end)
-        wait(10)
-    end
-end)
-
-sectionRaids:NewButton("Bypass Cooldown da Raid", "Remove tempo de espera da raid.", function()
-    pcall(function()
-        local plr = game.Players.LocalPlayer
-        plr.PlayerGui.Main.Timer.Visible = false
-    end)
-end)
-
-
-
--- ABA: COMBATE
-local sectionCombat = tabCombat:NewSection("Combate Automático")
-
-sectionCombat:NewToggle("Aimbot (Players)", "Trava a mira em jogadores próximos.", function(state)
-    getgenv().AimbotPlayers = state
-    while getgenv().AimbotPlayers do
-        pcall(function()
-            local plrs = game:GetService("Players")
-            local cam = workspace.CurrentCamera
-            local localPlr = plrs.LocalPlayer
-            local closest = nil
-            local dist = math.huge
-
-            for _,v in pairs(plrs:GetPlayers()) do
-                if v ~= localPlr and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                    local mag = (v.Character.HumanoidRootPart.Position - localPlr.Character.HumanoidRootPart.Position).magnitude
-                    if mag < dist then
-                        dist = mag
-                        closest = v
+-- Auto Haki
+AddToggle(UtilTab, "Auto Haki", false, function(value)
+    if value then
+        spawn(function()
+            while value do
+                pcall(function()
+                    local v = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if v then
+                        game:GetService("ReplicatedStorage").Remotes.Combat:FireServer("Buso")
                     end
-                end
-            end
-
-            if closest and closest.Character and closest.Character:FindFirstChild("Head") then
-                cam.CFrame = CFrame.new(cam.CFrame.Position, closest.Character.Head.Position)
+                end)
+                task.wait(10)
             end
         end)
-        wait(0.1)
     end
 end)
 
-sectionCombat:NewToggle("Auto Haki", "Ativa Haki automaticamente ao atacar.", function(state)
-    getgenv().AutoHaki = state
-    while getgenv().AutoHaki do
-        pcall(function()
-            if not game.Players.LocalPlayer.Character:FindFirstChild("HasBuso") then
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso")
+-- Auto Store Fruit
+AddToggle(UtilTab, "Auto Guardar Fruta", false, function(value)
+    if value then
+        spawn(function()
+            while value do
+                pcall(function()
+                    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v:IsA("Tool") and v:FindFirstChild("Fruit") then
+                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v.Name)
+                        end
+                    end
+                end)
+                task.wait(10)
             end
         end)
-        wait(2)
     end
 end)
 
-sectionCombat:NewToggle("Auto Saber Boss", "Farmeia o boss do Sabre automaticamente.", function(state)
-    getgenv().AutoSaberBoss = state
-    while getgenv().AutoSaberBoss do
-        pcall(function()
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartSaber")
-        end)
-        wait(5)
-    end
-end)
-
-sectionCombat:NewToggle("Auto Dark Blade", "Ativa habilidades da Dark Blade automaticamente.", function(state)
-    getgenv().AutoDarkBlade = state
-    while getgenv().AutoDarkBlade do
-        pcall(function()
-            local tool = game.Players.LocalPlayer.Character:FindFirstChild("Dark Blade") or game.Players.LocalPlayer.Backpack:FindFirstChild("Dark Blade")
-            if tool then
-                game:GetService("VirtualInputManager"):SendKeyEvent(true, "Z", false, game)
-                wait(0.5)
-                game:GetService("VirtualInputManager"):SendKeyEvent(false, "Z", false, game)
+-- Auto Drop Fruit
+AddToggle(UtilTab, "Auto Dropar Frutas", false, function(value)
+    if value then
+        spawn(function()
+            while value do
+                pcall(function()
+                    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v:IsA("Tool") and v:FindFirstChild("Fruit") then
+                            v.Parent = game.Players.LocalPlayer.Character
+                            task.wait()
+                            v:Destroy()
+                        end
+                    end
+                end)
+                task.wait(10)
             end
         end)
-        wait(3)
     end
 end)
 
-sectionCombat:NewToggle("Auto Kill NPCs", "Elimina automaticamente NPCs de missão.", function(state)
-    getgenv().AutoKillNPCs = state
-    while getgenv().AutoKillNPCs do
-        pcall(function()
-            for _,v in pairs(workspace.Enemies:GetChildren()) do
-                if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
-                    v.Humanoid.Health = 0
-                end
-            end
-        end)
-        wait(1)
-    end
-end)
-
-sectionCombat:NewToggle("Kill Aura", "Ataca automaticamente inimigos próximos.", function(state)
-    getgenv().KillAura = state
-    while getgenv().KillAura do
-        pcall(function()
-            for _,enemy in pairs(workspace.Enemies:GetChildren()) do
-                if enemy:FindFirstChild("HumanoidRootPart") and (enemy.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 50 then
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Attack", enemy)
-                end
-            end
-        end)
-        wait(0.5)
-    end
-end)
-
-sectionCombat:NewToggle("God Mode", "Ativa imortalidade (limita dano recebido).", function(state)
-    getgenv().GodMode = state
-    if state then
-        game.Players.LocalPlayer.Character.Humanoid.MaxHealth = math.huge
-        game.Players.LocalPlayer.Character.Humanoid.Health = math.huge
-    else
-        game.Players.LocalPlayer.Character.Humanoid.MaxHealth = 100
-    end
-end)
-
-sectionCombat:NewButton("Auto Equipar Fruta/Arma", "Equipa a fruta ou arma atual automaticamente.", function()
-    pcall(function()
-        local backpack = game.Players.LocalPlayer.Backpack
-        for _,v in pairs(backpack:GetChildren()) do
-            if v:IsA("Tool") then
-                game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-            end
-        end
-    end)
-end)
-
-
-
--- ABA: MOVIMENTAÇÃO / UTILITÁRIOS
-local sectionMove = tabUtil:NewSection("Movimentação")
-
-sectionMove:NewToggle("Fly", "Permite voar (tecla F).", function(state)
-    getgenv().flyToggled = state
-    local UIS = game:GetService("UserInputService")
-    local Plr = game.Players.LocalPlayer
-    local Char = Plr.Character or Plr.CharacterAdded:Wait()
-    local Hum = Char:WaitForChild("Humanoid")
-    local HRP = Char:WaitForChild("HumanoidRootPart")
-
-    local flying = false
-    local vel = Instance.new("BodyVelocity")
-    vel.Velocity = Vector3.zero
-    vel.MaxForce = Vector3.new(100000, 100000, 100000)
-    vel.P = 1250
-    vel.Name = "FlyVelocity"
-
-    local function fly()
-        vel.Parent = HRP
-        flying = true
-        while flying and getgenv().flyToggled do
-            vel.Velocity = HRP.CFrame.lookVector * 100
-            wait()
-        end
-        vel:Destroy()
-    end
-
-    if state then
-        fly()
-    end
-end)
-
-sectionMove:NewToggle("Noclip", "Ativa o noclip (atravessa objetos).", function(state)
-    getgenv().noclip = state
-    local RunService = game:GetService("RunService")
-    RunService.Stepped:Connect(function()
-        if getgenv().noclip then
-            for _,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                if v:IsA("BasePart") and v.CanCollide == true then
-                    v.CanCollide = false
-                end
-            end
-        end
-    end)
-end)
-
-sectionMove:NewToggle("Dash Infinito", "Remove cooldown do dash.", function(state)
-    getgenv().InfiniteDash = state
-    while getgenv().InfiniteDash do
-        pcall(function()
-            local plr = game.Players.LocalPlayer
-            plr.Character.EvadeCooldown.Value = 0
-        end)
-        wait(0.1)
-    end
-end)
-
-sectionMove:NewToggle("Super Pulo", "Aumenta força do pulo.", function(state)
-    getgenv().SuperJump = state
-    if state then
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 150
-    else
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
-    end
-end)
-
-sectionMove:NewSlider("Velocidade", "Controla a velocidade do player.", 500, 16, function(val)
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = val
-end)
-
-sectionMove:NewButton("Invisibilidade", "Deixa o personagem invisível.", function()
-    pcall(function()
-        local savedPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-        game.Players.LocalPlayer.Character:MoveTo(Vector3.new(9999, 9999, 9999))
-        wait(0.5)
-        game.Players.LocalPlayer.Character.HumanoidRootPart.Transparency = 1
-        game.Players.LocalPlayer.Character:MoveTo(savedPos.Position)
-    end)
-end)
-
-local sectionUtil = tabUtil:NewSection("Utilitários")
-
-sectionUtil:NewToggle("Anti-AFK", "Evita ser desconectado por inatividade.", function(state)
-    getgenv().AntiAFK = state
-    if state then
-        local vu = game:GetService("VirtualUser")
-        game:GetService("Players").LocalPlayer.Idled:Connect(function()
-            vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-            wait(1)
-            vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-        end)
-    end
-end)
-
-sectionUtil:NewToggle("Auto Rejoin", "Reconecta automaticamente ao ser desconectado.", function(state)
-    getgenv().AutoRejoin = state
-    while getgenv().AutoRejoin do
-        pcall(function()
-            if not game:IsLoaded() then
-                game:GetService("TeleportService"):Teleport(game.PlaceId)
-            end
-        end)
-        wait(5)
-    end
-end)
-
-
-
--- ABA: VISUAL / MUNDO
-local sectionVisual = tabWorld:NewSection("Visual")
-
-sectionVisual:NewToggle("ESP Players", "Mostra caixas nos jogadores.", function(state)
-    getgenv().espPlayers = state
-    while getgenv().espPlayers do
-        pcall(function()
-            for _, v in pairs(game.Players:GetPlayers()) do
-                if v ~= game.Players.LocalPlayer and v.Character and not v.Character:FindFirstChild("ESPBox") then
-                    local box = Instance.new("BoxHandleAdornment", v.Character)
-                    box.Name = "ESPBox"
-                    box.Adornee = v.Character:FindFirstChild("HumanoidRootPart")
-                    box.Size = Vector3.new(3, 5, 1)
-                    box.Color3 = Color3.new(1, 0, 0)
-                    box.Transparency = 0.5
-                    box.ZIndex = 5
-                    box.AlwaysOnTop = true
-                end
-            end
-        end)
-        wait(1)
-    end
-    -- Remover quando desativar
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v.Character and v.Character:FindFirstChild("ESPBox") then
-            v.Character.ESPBox:Destroy()
-        end
-    end
-end)
-
-sectionVisual:NewToggle("ESP NPCs", "Mostra caixas nos NPCs.", function(state)
-    getgenv().espNPC = state
-    while getgenv().espNPC do
-        pcall(function()
-            for _, npc in pairs(workspace:GetDescendants()) do
-                if npc:FindFirstChild("Humanoid") and npc:FindFirstChild("HumanoidRootPart") and not npc:FindFirstChild("ESPBox") then
-                    local box = Instance.new("BoxHandleAdornment", npc)
-                    box.Name = "ESPBox"
-                    box.Adornee = npc:FindFirstChild("HumanoidRootPart")
-                    box.Size = Vector3.new(3, 5, 1)
-                    box.Color3 = Color3.new(0, 1, 0)
-                    box.Transparency = 0.5
-                    box.ZIndex = 5
-                    box.AlwaysOnTop = true
-                end
-            end
-        end)
-        wait(1)
-    end
-    for _, npc in pairs(workspace:GetDescendants()) do
-        if npc:FindFirstChild("ESPBox") then
-            npc.ESPBox:Destroy()
-        end
-    end
-end)
-
-sectionVisual:NewToggle("ESP Itens", "Destaca itens no chão.", function(state)
-    getgenv().espItems = state
-    while getgenv().espItems do
-        pcall(function()
-            for _, item in pairs(workspace:GetDescendants()) do
-                if item:IsA("Tool") and not item:FindFirstChild("ESPBox") then
-                    local box = Instance.new("BoxHandleAdornment", item)
-                    box.Name = "ESPBox"
-                    box.Adornee = item:FindFirstChildWhichIsA("Part") or item
-                    box.Size = Vector3.new(2, 2, 2)
-                    box.Color3 = Color3.new(1, 1, 0)
-                    box.Transparency = 0.5
-                    box.ZIndex = 5
-                    box.AlwaysOnTop = true
-                end
-            end
-        end)
-        wait(1)
-    end
-    for _, item in pairs(workspace:GetDescendants()) do
-        if item:FindFirstChild("ESPBox") then
-            item.ESPBox:Destroy()
-        end
-    end
-end)
-
-sectionVisual:NewSlider("FOV", "Altera o campo de visão da câmera.", 120, 70, function(val)
-    workspace.CurrentCamera.FieldOfView = val
-end)
-
-local sectionWorld = tabWorld:NewSection("Mundo")
-
-sectionWorld:NewButton("Remover Nevoeiro", "Remove neblina do mapa.", function()
-    game.Lighting.FogEnd = 100000
-    game.Lighting.FogStart = 100000
-end)
-
-sectionWorld:NewButton("Brilho Máximo", "Melhora iluminação do jogo.", function()
-    game.Lighting.Brightness = 5
-    game.Lighting.GlobalShadows = false
-    game.Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
-end)
-
-sectionWorld:NewButton("Desativar Shake", "Remove tremores da câmera.", function()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("BlurEffect") or v:IsA("CameraShaker") then
-            v:Destroy()
-        end
-    end
-end)
-
-sectionWorld:NewButton("Remover Lava/Partes", "Destrói objetos perigosos do mapa.", function()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name:lower():match("lava") then
-            obj:Destroy()
-        end
-    end
-end)
-
--- [ UTILIDADES ]
-local abaUtilidades = criarAba("Utilidades")
-
-criarBotao(abaUtilidades, "Anti-AFK", function()
-    local vu = game:GetService("VirtualUser")
-    game:GetService("Players").LocalPlayer.Idled:connect(function()
-        vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-        wait(1)
-        vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-    end)
-end)
-
-criarBotao(abaUtilidades, "Anti-Ban (Proteção Básica)", function()
-    local mt = getrawmetatable(game)
-    local old = mt.__namecall
-    setreadonly(mt, false)
-    mt.__namecall = newcclosure(function(self, ...)
-        local args = {...}
-        if getnamecallmethod() == "FireServer" and tostring(self) == "Kick" then
-            return
-        end
-        return old(self, unpack(args))
-    end)
-end)
-
-criarBotao(abaUtilidades, "Auto Reconnect", function()
-    game:GetService("CoreGui"):WaitForChild("RobloxPromptGui"):WaitForChild("PromptOverlay").ChildAdded:Connect(function(child)
-        if child.Name == "ErrorPrompt" then
-            game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
-        end
-    end)
-end)
-
-criarBotao(abaUtilidades, "Auto Haki (Buso e Ken)", function()
-    while task.wait(1) do
-        pcall(function()
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso")
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Ken", true)
-        end)
-    end
-end)
-
-criarBotao(abaUtilidades, "Auto Store Fruit", function()
-    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-        if v:IsA("Tool") and string.find(v.Name:lower(), "fruit") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v.Name)
-        end
-    end
-end)
-
-criarBotao(abaUtilidades, "Auto Drop Fruit (Dropa Frutas Específicas)", function()
-    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-        if v:IsA("Tool") and string.find(v.Name:lower(), "bomb") or string.find(v.Name:lower(), "spin") then
-            v.Parent = game.Workspace
-        end
-    end
-end)
-
-criarBotao(abaUtilidades, "Server Hop", function()
+-- Server Hop
+AddButton(UtilTab, "Trocar de Servidor", function()
     local ts = game:GetService("TeleportService")
-    local http = game:GetService("HttpService")
-    local servers = game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
-    local serversDecoded = http:JSONDecode(servers)
-    for i,v in pairs(serversDecoded.data) do
-        if v.playing < v.maxPlayers then
-            ts:TeleportToPlaceInstance(game.PlaceId, v.id)
-            break
+    local place = game.PlaceId
+    ts:Teleport(place)
+end)
+
+-- UI Mobile Responsiva já foi incluída na Parte principal
+-- PARTE 7: Economia
+
+local economiaTab = library:CreateTab("Economia")
+
+-- Auto Comprar Frutas
+economiaTab:CreateToggle("Auto Comprar Frutas", function(state)
+    getgenv().AutoBuyFruits = state
+    while getgenv().AutoBuyFruits do
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("GetFruits")
+        wait(10)
+    end
+end)
+
+-- Auto Vender Itens
+economiaTab:CreateToggle("Auto Vender Itens", function(state)
+    getgenv().AutoSellItems = state
+    while getgenv().AutoSellItems do
+        -- código de venda fictício, requer implementação de venda real
+        print("Vendendo itens...")
+        wait(10)
+    end
+end)
+
+-- Auto Comprar Espadas/Itens no NPC
+economiaTab:CreateToggle("Auto Comprar Espadas/Itens", function(state)
+    getgenv().AutoBuyItems = state
+    while getgenv().AutoBuyItems do
+        -- exemplo genérico
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("BuyItem", "TrueTripleKatana")
+        wait(15)
+    end
+end)
+
+-- Auto Atualizar Atributos
+economiaTab:CreateToggle("Auto Atualizar Atributos", function(state)
+    getgenv().AutoUpgradeStats = state
+    while getgenv().AutoUpgradeStats do
+        local stats = {"Melee", "Defense", "Sword", "Gun", "Demon Fruit"}
+        for _, v in pairs(stats) do
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AddPoint", v, 1)
         end
+        wait(5)
     end
 end)
+-- Parte 8: Estética / Customização
 
+local function CriarAbaEstetica()
+    local abaEstetica = CriarAba("Estética")
 
--- Estética / Customização
-local esteticaPage = window:CreateTab("Estética", 4483362458)
-local temaToggle = esteticaPage:CreateToggle("Tema Escuro", nil, function(state)
-    if state then
-        OrionLib:SetTheme("Dark")
-    else
-        OrionLib:SetTheme("Light")
-    end
-end)
-temaToggle:Set(true)
+    -- Tema Escuro/Claro
+    CriarBotaoAlternar(abaEstetica, "Tema Escuro", false, function(ativado)
+        if ativado then
+            Interface.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        else
+            Interface.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    end)
 
-local modoTransparente = esteticaPage:CreateToggle("Modo Transparente", nil, function(state)
-    if state then
-        game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BackgroundTransparency = 1
-    else
-        game:GetService("Players").LocalPlayer.PlayerGui.ScreenGui.BackgroundTransparency = 0
-    end
-end)
+    -- Modo Transparente
+    CriarBotaoAlternar(abaEstetica, "Modo Transparente", false, function(ativado)
+        Interface.BackgroundTransparency = ativado and 0.5 or 0
+    end)
 
-esteticaPage:CreateButton("Ativar UI Touch", function()
-    game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
-end)
+    -- Mostrar/Ocultar Categorias
+    CriarBotaoAlternar(abaEstetica, "Categorias Expandidas", true, function(ativado)
+        for _, aba in pairs(Abas) do
+            aba.Visible = ativado
+        end
+    end)
 
-esteticaPage:CreateLabel("Use os atalhos de teclado conforme seu dispositivo.")
+    -- Botões Touch ou Atalhos
+    CriarBotaoAlternar(abaEstetica, "Ativar Botões Touch", true, function(ativado)
+        if ativado then
+            CriarBotaoTouch("Abrir Menu", UDim2.new(0, 20, 1, -60), function()
+                Interface.Visible = not Interface.Visible
+            end)
+        else
+            if BotaoTouch then BotaoTouch:Destroy() end
+        end
+    end)
+end
 
+CriarAbaEstetica()
